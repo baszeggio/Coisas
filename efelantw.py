@@ -2,18 +2,18 @@
 import psycopg
 
 # Connect to an existing database
-with psycopg.connect("dbname=test user=postgres") as conn:
+with psycopg.connect("dbname=turma3f user=postgres password=3f@db ost=164.90.152.205 port=80") as conn:
 
     # Open a cursor to perform database operations
     with conn.cursor() as cur:
 
         # Execute a command: this creates a new table
-        cur.execute("""
-            CREATE TABLE test (
-                id serial PRIMARY KEY,
-                num integer,
-                data text)
-            """)
+        #cur.execute("""
+            #CREATE TABLE test (
+                #id serial PRIMARY KEY,
+                #num integer,
+                #data text)
+           #""")
 
         # Pass data to fill a query placeholders and let Psycopg perform
         # the correct conversion (no SQL injections!)
