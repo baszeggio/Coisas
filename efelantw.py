@@ -1,41 +1,55 @@
-# Note: the module name is psycopg, not psycopg3
+from flask import Flask, request
+import uuid
 import psycopg
 
-# Connect to an existing database
-with psycopg.connect("dbname=turma3f user=postgres password=3f@db ost=164.90.152.205 port=80") as conn:
+app = Flask(__name__)
+connection_db = psycopg.connect("host=164.90.152.205 bdname=turma3f user=postgres password=")
 
-    # Open a cursor to perform database operations
-    with conn.cursor() as cur:
+@app.route("/pessoas", methods=["POST"])
+def incluir_pessoa():
+    dados_recebidos = request.get_json()
+    id = uuid.uuid4()
+    nome = dados_recebidos['nome']
 
-        # Execute a command: this creates a new table
-        #cur.execute("""
-            #CREATE TABLE test (
-                #id serial PRIMARY KEY,
-                #num integer,
-                #data text)
-           #""")
+    cursor = connection_db.cursor()
+    cursor.execute('insert into pessoas (id, nome) values (%s, %s)', (id, nome))
+    connection_db.commit()
 
-        # Pass data to fill a query placeholders and let Psycopg perform
-        # the correct conversion (no SQL injections!)
-        cur.execute(
-            "INSERT INTO test (num, data) VALUES (%s, %s)",
-            (100, "abc'def"))
+    return {
+        'id': id
+    }
 
-        # Query the database and obtain data as Python objects.
-        cur.execute("SELECT * FROM test")
-        print(cur.fetchone())
-        # will print (1, 100, "abc'def")
+@app.route("/vendas", methods=["GET"])
+def get_vendas():
+    cursor = connection_db.cursor()
+    cursor.execute('''select * from vendas
+left join pessoas on vendas.id = pessoa.id
+left join produtos on vendas.id produto - produtos.id''')
 
-        # You can use `cur.executemany()` to perform an operation in batch
-        cur.executemany(
-            "INSERT INTO test (num) values (%s)",
-            [(33,), (66,), (99,)])
+    lista = []
+    for item in cursor:
+        lista.append({
+            'id': item[0],
+            'pessoa' : (
+                'id': item[1]
+                'nome': item[4]
+            ),
+            'produto': (
+                'id': item[2]
+                'nome': item[6]
+                'preco': item[7]
+            )
+        })
+    return lista
 
-        # You can use `cur.fetchmany()`, `cur.fetchall()` to return a list
-        # of several records, or even iterate on the cursor
-        cur.execute("SELECT id, num FROM test order by num")
-        for record in cur:
-            print(record)
+@app.route("/pessoas/<id>", methods=["PUT"])
+def atualizar_pessoas(id):
+    dados_recebidos = request.get_json()
+    nome = dados_recebidos['nome']
 
-        # Make the changes to the database persistent
-        conn.commit()
+    cursor = connection_db.cursor()
+    cursor.execute('update pessoas set nome = %s where id = %s', (nome, id))
+    connection_db.commit()
+    return {
+        'id': id
+    }
